@@ -19,7 +19,10 @@ public class NPCController : MonoBehaviour
 
     [Header("Wander Settings")]
     public float wanderRadius = 8f;
-    public float wanderTimer = 4f;
+    // public float wanderTimer = 4f;
+    public float minWanderTime = 2f;
+    public float maxWanderTime = 6f;
+    private float wanderTimer;
     public float normalSpeed = 2f;
 
     [Header("Panic Settings")]
@@ -139,6 +142,7 @@ public class NPCController : MonoBehaviour
         {
             Vector3 newPos = RandomNavSphere(transform.position, wanderRadius, -1);
             agent.SetDestination(newPos);
+            wanderTimer = Random.Range(minWanderTime, maxWanderTime);
             timer = 0;
         }
     }
@@ -215,9 +219,17 @@ public class NPCController : MonoBehaviour
     public static Vector3 RandomNavSphere(Vector3 origin, float dist, int layermask)
     {
         Vector3 randDirection = Random.insideUnitSphere * dist + origin;
-        NavMesh.SamplePosition(randDirection, out NavMeshHit navHit, dist, layermask);
-        return navHit.position;
+        NavMeshHit navHit;
+
+        if (NavMesh.SamplePosition(randDirection, out navHit, dist, layermask))
+        {
+            return navHit.position; // valid point
+        }
+
+        // fallback: pakai posisi sekarang biar ga Infinity
+        return origin;
     }
+
 
     private int GetNearestEvacuatePointIndex()
     {
