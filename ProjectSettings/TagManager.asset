@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - EvacuatePoint
+  - NPC
   layers:
   - Default
   - TransparentFX

@@ -84,6 +84,7 @@ public class NPCController : MonoBehaviour
 
     void TryInteraction()
     {
+        if (currentState == NPCState.Panic || currentState == NPCState.Evacuate) return;
         Collider[] hits = Physics.OverlapSphere(transform.position, interactionRadius);
         foreach (var hit in hits)
         {
@@ -124,6 +125,7 @@ public class NPCController : MonoBehaviour
 
     void Panic()
     {
+        StopCoroutine("InteractWith");
         agent.speed = panicSpeed;
         // lari random lebih cepat
         if (!agent.hasPath)
