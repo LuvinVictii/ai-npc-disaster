@@ -176,7 +176,7 @@ public class NPCController : MonoBehaviour
         yield return new WaitForSeconds(panicDuration);
         if (evacuatePoints.Length > 0)
         {
-            evacuationIndex = Random.Range(0, evacuatePoints.Length);
+            evacuationIndex = GetBestEvacuatePointIndexByPath();
             CurrentState = NPCState.Evacuate;
         }
     }
@@ -217,6 +217,70 @@ public class NPCController : MonoBehaviour
         Vector3 randDirection = Random.insideUnitSphere * dist + origin;
         NavMesh.SamplePosition(randDirection, out NavMeshHit navHit, dist, layermask);
         return navHit.position;
+    }
+
+    private int GetNearestEvacuatePointIndex()
+    {
+        int nearestIndex = 0;
+        float nearestSqr = Mathf.Infinity;
+        Vector3 pos = transform.position;
+        for (int i = 0; i < evacuatePoints.Length; i++)
+        {
+            Transform p = evacuatePoints[i];
+            if (p == null) continue;
+            float d = (p.position - pos).sqrMagnitude;
+            if (d < nearestSqr)
+            {
+                nearestSqr = d;
+                nearestIndex = i;
+            }
+        }
+        return nearestIndex;
+    }
+
+    private int GetBestEvacuatePointIndexByPath()
+    {
+        int bestIndex = -1;
+        float bestScore = Mathf.Infinity;
+
+        NavMeshPath path = new NavMeshPath();
+
+        for (int i = 0; i < evacuatePoints.Length; i++)
+        {
+            Transform target = evacuatePoints[i];
+            if (target == null) continue;
+
+            bool hasPath = agent.CalculatePath(target.position, path);
+            if (!hasPath || path.status == NavMeshPathStatus.PathInvalid) continue;
+
+            float length = GetPathLength(path);
+            // Prefer complete paths over partial ones by adding a large penalty to partial paths
+            float score = length + (path.status == NavMeshPathStatus.PathComplete ? 0f : 10000f);
+
+            if (score < bestScore)
+            {
+                bestScore = score;
+                bestIndex = i;
+            }
+        }
+
+        if (bestIndex >= 0) return bestIndex;
+
+        // Fallback to straight-line nearest if no valid path found
+        return GetNearestEvacuatePointIndex();
+    }
+
+    private float GetPathLength(NavMeshPath path)
+    {
+        var corners = path.corners;
+        if (corners == null || corners.Length < 2) return Mathf.Infinity;
+
+        float dist = 0f;
+        for (int i = 1; i < corners.Length; i++)
+        {
+            dist += Vector3.Distance(corners[i - 1], corners[i]);
+        }
+        return dist;
     }
 
     private void UpdateColor()
