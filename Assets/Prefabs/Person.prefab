@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 1549464587697607961}
   m_Layer: 0
   m_Name: Person
-  m_TagString: Untagged
+  m_TagString: NPC
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -144,5 +144,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a207383dfb50ee48b82ec41b6636fc6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentState: 1
   wanderRadius: 8
   wanderTimer: 4
+  normalSpeed: 2
+  panicSpeed: 6
+  evacuatePoints: []
+  interactionRadius: 2
+  interactionChance: 0.6
+  minInteractionDuration: 2
+  maxInteractionDuration: 5
+  interactionCooldown: 3
+  joinChance: 0.8

@@ -21,6 +21,18 @@ public class NPCController : MonoBehaviour
     public Transform[] evacuatePoints; // assign di Inspector
     private int evacuationIndex = 0;
 
+    [Header("Interaction Settings")]
+    public float interactionRadius = 2f;
+    [Range(0f, 1f)] public float interactionChance = 0.5f;
+    public float minInteractionDuration = 2f;
+    public float maxInteractionDuration = 5f;
+    public float interactionCooldown = 3f;
+    [Range(0f, 1f)] public float joinChance = 0.3f; // kemungkinan nimbrung NPC lain
+
+    private bool isInteracting = false;
+    private bool isCooldown = false;
+    private float cooldownTimer = 0f;
+
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -37,6 +49,17 @@ public class NPCController : MonoBehaviour
 
     void Update()
     {
+        if (isCooldown)
+        {
+            cooldownTimer -= Time.deltaTime;
+            if (cooldownTimer <= 0) isCooldown = false;
+        }
+
+        if (!isInteracting && !isCooldown)
+        {
+            TryInteraction();
+        }
+
         switch (currentState)
         {
             case NPCState.Idle:
@@ -57,6 +80,35 @@ public class NPCController : MonoBehaviour
     void Idle()
     {
         // Bisa tambahin animasi idle
+    }
+
+    void TryInteraction()
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, interactionRadius);
+        foreach (var hit in hits)
+        {
+            if (hit.gameObject != gameObject && hit.CompareTag("NPC"))
+            {
+                NPCController other = hit.GetComponent<NPCController>();
+
+                // Kalau NPC lain lagi interaksi → ada chance nimbrung
+                if (other != null && other.isInteracting && Random.value < joinChance)
+                {
+                    StartCoroutine(InteractWith(other));
+                    return;
+                }
+
+                // Kalau NPC lain lagi cooldown → skip
+                if (other != null && other.isCooldown) continue;
+
+                // Kalau dua-duanya idle dan chance berhasil
+                if (other != null && !other.isInteracting && !other.isCooldown && Random.value < interactionChance)
+                {
+                    StartCoroutine(InteractWith(other));
+                    return;
+                }
+            }
+        }
     }
 
     void Wander()
@@ -112,5 +164,44 @@ public class NPCController : MonoBehaviour
         yield return new WaitForSeconds(panicDuration);
         evacuationIndex = Random.Range(0, evacuatePoints.Length);
         currentState = NPCState.Evacuate;
+    }
+
+    private IEnumerator InteractWith(NPCController other)
+    {
+        Debug.Log(name + " interacting with " + (other != null ? other.name : "self"));
+        isInteracting = true;
+        currentState = NPCState.Idle;
+        agent.isStopped = true;
+
+        if (other != null)
+        {
+            other.isInteracting = true;
+            other.currentState = NPCState.Idle;
+            other.agent.isStopped = true;
+
+            // Saling berhadapan
+            Vector3 dirToOther = (other.transform.position - transform.position).normalized;
+            transform.forward = new Vector3(dirToOther.x, 0, dirToOther.z);
+            other.transform.forward = -new Vector3(dirToOther.x, 0, dirToOther.z);
+        }
+
+        float duration = Random.Range(minInteractionDuration, maxInteractionDuration);
+        yield return new WaitForSeconds(duration);
+
+        // Selesai interaksi
+        isInteracting = false;
+        isCooldown = true;
+        cooldownTimer = interactionCooldown;
+        agent.isStopped = false;
+        currentState = NPCState.Wander;
+
+        if (other != null)
+        {
+            other.isInteracting = false;
+            other.isCooldown = true;
+            other.cooldownTimer = other.interactionCooldown;
+            other.agent.isStopped = false;
+            other.currentState = NPCState.Wander;
+        }
     }
 }
