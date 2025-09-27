@@ -144,7 +144,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a207383dfb50ee48b82ec41b6636fc6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentState: 1
+  initialState: 1
+  idleColor: {r: 1, g: 1, b: 1, a: 1}
+  wanderColor: {r: 0, g: 1, b: 0.14507627, a: 1}
+  interactionColor: {r: 0.08018869, g: 0.16226877, b: 1, a: 1}
+  panicColor: {r: 1, g: 0, b: 0, a: 1}
+  evacuateColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   wanderRadius: 8
   wanderTimer: 4
   normalSpeed: 2
